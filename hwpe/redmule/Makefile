@@ -6,6 +6,10 @@ ifeq ($(use_dma),1)
  PULP_CFLAGS += -DUSE_DMA
 endif
 
+ifeq ($(use_redundancy),1)
+ PULP_CFLAGS += -DUSE_REDUNDANCY
+endif
+
 ifeq ($(fault_inject),1)
   export FAULT_INJECTION=1
   export FAULT_INJECTION_SCRIPT=$(CURDIR)/pulp_inject_fault.tcl

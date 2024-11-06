@@ -25,6 +25,7 @@
 #include "hal_redmule.h"
 #include "pulp.h"
 
+
 int main() {
 
   volatile int errors = 0;
@@ -39,6 +40,12 @@ int main() {
     uint16_t m_size = M_SIZE;
     uint16_t n_size = N_SIZE;
     uint16_t k_size = K_SIZE;
+    #ifdef USE_REDUNDANCY
+      printf ("Using redundancy ");
+      uint32_t redundancy = 1;
+    #else
+      uint32_t redundancy = 0;
+    #endif
 
     uint8_t *x_ext = x_inp;
     uint8_t *w_ext = w_inp;
@@ -48,6 +55,7 @@ int main() {
     uint8_t volatile *x = (uint8_t volatile *) pi_l1_malloc(0, (2*m_size*n_size));
     uint8_t volatile *w = (uint8_t volatile *) pi_l1_malloc(0, (2*n_size*k_size));
     uint8_t volatile *y = (uint8_t volatile *) pi_l1_malloc(0, (2*m_size*k_size));
+    uint8_t volatile *z = (uint8_t volatile *) pi_l1_malloc(0, (2*m_size*k_size));
 
     #ifdef USE_DMA
       volatile unsigned int dma_id = 0;
@@ -84,17 +92,7 @@ int main() {
 
     hwpe_soft_clear();
 
-    // redmule_cfg ((unsigned int) x,
-    //              (unsigned int) w,
-    //              (unsigned int) y,
-    //              m_size, n_size, k_size,
-    //              (uint8_t) GEMM,
-    //              (uint8_t) Float16);
-    redmule_x_add_set ((unsigned int) x);
-    redmule_w_add_set ((unsigned int) w);
-    redmule_y_add_set ((unsigned int) y);
-    redmule_z_add_set ((unsigned int) y);
-    redmule_cfg (m_size, n_size, k_size, gemm_ops);
+    redmule_cfg ((uint32_t) x, (uint32_t) w, (uint32_t) y, (uint32_t) z, m_size, n_size, k_size, gemm_ops, redundancy);
 
     // Start RedMulE operation
     hwpe_trigger_job();
@@ -110,6 +108,7 @@ int main() {
     hwpe_cg_disable();
 
     errors = redmule_compare16((int) y, (int) m_size, (int) k_size);
+    errors = redmule_compare16((int) z, (int) m_size, (int) k_size);
 
     *(int *) 0x1A1040A0 = errors;
 
