@@ -410,11 +410,9 @@ int redmule_compare16 (int z_start_addr, int m_size, int k_size) {
 int redmule16_compare_int(uint32_t *actual_z, uint32_t *golden_z, int len) {
   #define ERR 0x0011
   uint32_t actual_word = 0;
-  uint16_t actual_MSHWord, actual_LSHWord;
   uint32_t golden_word = 0;
-  uint16_t golden_MSHWord, golden_LSHWord;
-  uint32_t actual = 0;
-  uint32_t golden = 0;
+  uint16_t actual_hword;
+  uint16_t golden_hword;
 
   int errors = 0;
   int error;
@@ -424,48 +422,42 @@ int redmule16_compare_int(uint32_t *actual_z, uint32_t *golden_z, int len) {
     actual_word = *(actual_z+i);
     golden_word = *(golden_z+i);
 
-    uint16_t diff = 0;
-    
-    // Chechink Least Significant Half-Word
-    actual_LSHWord = (uint16_t)(actual_word & 0x0000FFFF);
-    golden_LSHWord = (uint16_t)(golden_word & 0x0000FFFF);
+    for (int hword=0; hword<2; hword++) {
+      uint8_t diff = 0;
+      
+      actual_hword = (uint8_t)((actual_word > (hword * 16)) & 0x0000FFFF);
+      golden_hword = (uint8_t)((golden_word > (hword * 16)) & 0x0000FFFF);
 
-    diff = (actual_LSHWord > golden_LSHWord) ? (actual_LSHWord - golden_LSHWord) : 0;
-    diff = (actual_LSHWord < golden_LSHWord) ? (golden_LSHWord - actual_LSHWord) : 0;
+      if ((actual_hword & 0x7C00) == 0x7C00) {
+        // Actual is (+/-) Infinity or Nan, set diff to positive Infinity
+        diff = 0x7C00; 
+      } else if (actual_hword > golden_hword) {
+        diff = actual_hword - golden_hword;
+      }
+      else if  (actual_hword < golden_hword) {
+        diff = golden_hword - actual_hword;
+      } 
+      else {
+        diff = 0;
+      }
 
-    if (diff > ERR) {
-      error = 1;
-      #ifdef VERBOSE
-        tfp_printf ("diff: 0x%08x\n", diff);
-        tfp_printf ("LSW: Error!\n");
-      #endif
+      if (diff > ERR) {
+        error = 1;
+        printf ("diff: 0x%08x\n", diff);
+        printf ("HWord %i: Error!\n", hword);
+      }
+
+      errors += error;
     }
-
-    // Checking Most Significant Half-Word
-    actual_MSHWord = (uint16_t)((actual_word >> 16) & 0x0000FFFF);
-    golden_MSHWord = (uint16_t)((golden_word >> 16) & 0x0000FFFF);
-
-    diff = (actual_MSHWord > golden_MSHWord) ? (actual_MSHWord - golden_MSHWord) : 0;
-    diff = (actual_MSHWord < golden_MSHWord) ? (golden_MSHWord - actual_MSHWord) : 0;
-
-    if (diff > ERR) {
-      error = 1;
-      #ifdef VERBOSE
-        tfp_printf ("diff: 0x%08x\n", diff);
-        tfp_printf ("MSW: Error!\n");
-      #endif
-    }
-    
-    errors += error;
 
     #ifdef DEBUG
-      tfp_printf("  Golden: 0x%08x; Actual: 0x%08x,\n", golden_word, actual_word);
+      printf("  Golden: 0x%08x; Actual: 0x%08x,\n", golden_word, actual_word);
     #endif
 
     #ifdef VERBOSE
     if(error) {
         if(errors==1) tfp_printf("  golden     <- actual     @ address    @ index\n");
-        tfp_printf("  0x%08x <- 0x%08x @ 0x%08x @ 0x%08x\n", golden_word, actual_word, (actual_z+i), i*4);
+        printf("  0x%08x <- 0x%08x @ 0x%08x @ 0x%08x\n", golden_word, actual_word, (actual_z+i), i*4);
     }
     #endif
   }
@@ -473,19 +465,11 @@ int redmule16_compare_int(uint32_t *actual_z, uint32_t *golden_z, int len) {
 }
 
 int redmule8_compare_int(uint32_t *actual_z, uint32_t *golden_z, int len) {
-  #define ERR 0x0011
+  #define ERR 0x03
   uint32_t actual_word = 0;
-  uint8_t  actual_Byte0,
-           actual_Byte1,
-           actual_Byte2,
-           actual_Byte3;
   uint32_t golden_word = 0;
-  uint8_t  golden_Byte0,
-           golden_Byte1,
-           golden_Byte2,
-           golden_Byte3;
-  uint32_t actual = 0;
-  uint32_t golden = 0;
+  uint8_t  actual_byte;
+  uint8_t  golden_byte;
 
   int errors = 0;
   int error;
@@ -495,70 +479,40 @@ int redmule8_compare_int(uint32_t *actual_z, uint32_t *golden_z, int len) {
     actual_word = *(actual_z+i);
     golden_word = *(golden_z+i);
 
-    uint8_t diff = 0;
-    
-    // Cheching Byte0
-    actual_Byte0 = (uint8_t)(actual_word & 0x000000FF);
-    golden_Byte0 = (uint8_t)(golden_word & 0x000000FF);
 
-    diff = (actual_Byte0 > golden_Byte0) ? (actual_Byte0 - golden_Byte0) : 0;
-    diff = (actual_Byte0 < golden_Byte0) ? (golden_Byte0 - actual_Byte0) : 0;
+    for (int byte=0; byte<4; byte++) {
+      uint8_t diff = 0;
+      
+      actual_byte = (uint8_t)((actual_word > (byte * 8)) & 0x000000FF);
+      golden_byte = (uint8_t)((golden_word > (byte * 8)) & 0x000000FF);
 
-    if (diff > ERR) {
-      error = 1;
-      tfp_printf ("diff: 0x%08x\n", diff);
-      tfp_printf ("Byte0: Error!\n");
+      if ((actual_byte & 0x78) == 0x78) {
+        // Actual is (+/-) Infinity or Nan, set diff to positive Infinity
+        diff = 0x78; 
+      } else if (actual_byte > golden_byte) {
+        diff = actual_byte - golden_byte;
+      }
+      else if  (actual_byte < golden_byte) {
+        diff = golden_byte - actual_byte;
+      }
+      else {
+        diff = 0;
+      }
+
+      if (diff > ERR) {
+        error = 1;
+        printf ("diff: 0x%08x\n", diff);
+        printf ("Byte %i: Error!\n", byte);
+      }
+
+      errors += error;
     }
 
-    // Cheching Byte1
-    actual_Byte1 = (uint8_t)( (actual_word >> 8 ) & 0x000000FF);
-    golden_Byte1 = (uint8_t)( (golden_word >> 8 ) & 0x000000FF);
-
-    diff = (actual_Byte1 > golden_Byte1) ? (actual_Byte1 - golden_Byte1) : 0;
-    diff = (actual_Byte1 < golden_Byte1) ? (golden_Byte1 - actual_Byte1) : 0;
-
-    if (diff > ERR) {
-      error = 1;
-      tfp_printf ("diff: 0x%08x\n", diff);
-      tfp_printf ("Byte1: Error!\n");
-    }
-
-    // Cheching Byte2
-    actual_Byte2 = (uint8_t)( (actual_word >> 16 ) & 0x000000FF);
-    golden_Byte2 = (uint8_t)( (golden_word >> 16 ) & 0x000000FF);
-
-    diff = (actual_Byte2 > golden_Byte2) ? (actual_Byte2 - golden_Byte2) : 0;
-    diff = (actual_Byte2 < golden_Byte2) ? (golden_Byte2 - actual_Byte2) : 0;
-
-    if (diff > ERR) {
-      error = 1;
-      tfp_printf ("diff: 0x%08x\n", diff);
-      tfp_printf ("Byte2: Error!\n");
-    }
-
-    // Cheching Byte3
-    actual_Byte3 = (uint8_t)( (actual_word >> 24 ) & 0x000000FF);
-    golden_Byte3 = (uint8_t)( (golden_word >> 24 ) & 0x000000FF);
-
-    diff = (actual_Byte3 > golden_Byte3) ? (actual_Byte3 - golden_Byte3) : 0;
-    diff = (actual_Byte3 < golden_Byte3) ? (golden_Byte3 - actual_Byte3) : 0;
-
-    if (diff > ERR) {
-      error = 1;
-      tfp_printf ("diff: 0x%08x\n", diff);
-      tfp_printf ("Byte3: Error!\n");
-    }
-    
-    errors += error;
-
-    #ifdef DEBUG
-      tfp_printf("  Golden: 0x%08x; Actual: 0x%08x,\n", golden_word, actual_word);
-    #endif
-
+    // tfp_printf("  Golden: 0x%08x; Actual: 0x%08x,\n", golden_word, actual_word);
     #ifdef VERBOSE
       if(error) {
-        if(errors==1) tfp_printf("  golden     <- actual     @ address    @ index\n");
-        tfp_printf("  0x%08x <- 0x%08x @ 0x%08x @ 0x%08x\n", golden_word, actual_word, (actual_z+i), i*4);
+        if(errors==1) printf("  golden     <- actual     @ address    @ index\n");
+        printf("  0x%08x <- 0x%08x @ 0x%08x @ 0x%08x\n", golden_word, actual_word, (actual_z+i), i*4);
       }
     #endif
   }
