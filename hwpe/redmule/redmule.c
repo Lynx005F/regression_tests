@@ -57,7 +57,10 @@ int main() {
     uint8_t volatile *y = (uint8_t volatile *) pi_l1_malloc(0, (2*m_size*k_size));
     uint8_t volatile *z = (uint8_t volatile *) pi_l1_malloc(0, (2*m_size*k_size));
 
+
     #ifdef USE_DMA
+      printf ("Using DMA");
+
       volatile unsigned int dma_id = 0;
       dma_id = mchan_alloc();
       mchan_transfer((unsigned int) 2*(2*m_size*n_size),
@@ -78,8 +81,24 @@ int main() {
                      (unsigned int) y_ext,
                      (unsigned int) y    );
       mchan_barrier(dma_id);
+      mchan_free(dma_id);
+
+      // Fill z buffer with inputs also - what data is in there doesn't matter
+      // since it will get overwritten. But we need to write it once
+      // so ECC does not trip!
+      dma_id = mchan_alloc();
+      mchan_transfer((unsigned int) 2*(2*m_size*k_size),
+                     (unsigned int) y_ext,
+                     (unsigned int) z    );
+      mchan_barrier(dma_id);
     #else
       generate_test_data16((int) x, (int) w, (int) y, (int) m_size, (int) n_size, (int) k_size);
+
+      // Fill z buffer with something to make sure no ECC error
+      for (int i = 0; i < (2*m_size*k_size); i++) {
+        z[i] = i;
+      }
+
     #endif
 
     int gold_sum = 0, check_sum = 0;
