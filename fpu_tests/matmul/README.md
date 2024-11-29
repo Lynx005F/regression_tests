@@ -19,6 +19,7 @@ There are several flags useful to activate some functionalities:
 - `verbose=1` prints the wrong results
 - `stats=1` activates performance measurement
 - `PRINT_RESULTS=1` print outputs of C code
+- `use_redundancy=1` enables core and shared FPU redundancy (does not work with `FABRIC=1`)
 
 
 ## Generating the golden model

@@ -13,6 +13,10 @@ PULP_CFLAGS += -DNUM_CORES=1
 endif
 
 
+ifdef use_redundancy
+PULP_CFLAGS += -DREDUNDANCY
+endif
+
 ifdef FABRIC
 PULP_CFLAGS += -DFABRIC
 endif
