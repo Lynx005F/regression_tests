@@ -13,7 +13,7 @@ PULP_CFLAGS += -DNUM_CORES=1
 endif
 
 
-ifdef use_redundancy
+ifeq ($(use_redundancy), 1)
 PULP_CFLAGS += -DREDUNDANCY
 endif
 
