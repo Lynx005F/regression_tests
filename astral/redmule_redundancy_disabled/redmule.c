@@ -123,16 +123,16 @@ void main_fn(testresult_t *result, void (*start)(), void (*stop)()) {
 
     int offload_id_tmp, offload_id;
 
-    #ifdef STATS
-      start();
-    #endif
-
     // Enable RedMulE
     hwpe_cg_enable();
 
     hwpe_soft_clear();
 
     redmule_cfg ((uint32_t) x, (uint32_t) w, (uint32_t) y, (uint32_t) z, m_size, n_size, k_size, gemm_ops, redundancy);
+
+    #ifdef STATS
+      start();
+    #endif
 
     // Start RedMulE operation
     hwpe_trigger_job();
