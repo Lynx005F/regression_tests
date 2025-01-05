@@ -79,17 +79,15 @@ void __attribute__ ((noinline)) matMul(MA_TYPE * __restrict__ A, MB_TYPE * __res
       MB_TYPE tempb0;
       MB_TYPE tempb1;
 
-      tempa0 = A[i*N];
 
       //Manual unrolling
       for (int k = 0; k < (N & 0xfffffffe); k+=2) {
+        tempa0 = A[i*N+k];
         tempb0 = B[k*P+j];
         tempa1 = A[i*N+k+1];
         tempb1 = B[k*P+j+P];
         temp0 += (OUT_TYPE)(tempa0 * tempb0);
-        tempa0 = A[i*N+k+2];
         temp1 += (OUT_TYPE)(tempa1 * tempb1);
-
       }
          C[i*P+j] = (OUT_TYPE)(temp0 + temp1);
     }
