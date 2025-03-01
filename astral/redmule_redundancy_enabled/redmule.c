@@ -128,24 +128,21 @@ void main_fn(testresult_t *result, void (*start)(), void (*stop)()) {
 
     hwpe_soft_clear();
 
+    #ifdef STATS
+      start();
+    #endif
+
     redmule_cfg ((uint32_t) x, (uint32_t) w, (uint32_t) y, (uint32_t) z, m_size, n_size, k_size, gemm_ops, redundancy);
 
     #ifdef STATS
-      start();
+      stop();
     #endif
 
     // Start RedMulE operation
     hwpe_trigger_job();
 
-
-    #ifdef STATS
-      // Wait for end of computation
-      redmule_evt_wait();
-      stop();
-    #else
-      // Wait for end of computation
-      redmule_evt_wait();
-    #endif
+    // Wait for end of computation
+    redmule_evt_wait();
 
     #ifdef CHECK
       // Check number of detected errors by ECC modules inside RedMulE

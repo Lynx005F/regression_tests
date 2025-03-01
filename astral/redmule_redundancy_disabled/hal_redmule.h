@@ -146,7 +146,7 @@ static inline void mchan_free(int id) {
   *(volatile int*) DMA_STATUS_REGISTER = 0x1 << id;
 }
 
-void redmule_cfg (uint32_t x_address, uint32_t w_address, uint32_t y_address, uint32_t z_address, uint16_t m_size, uint16_t n_size, uint16_t k_size, uint8_t gemm_ops, uint32_t redundancy_enabled){
+void redmule_cfg (volatile uint32_t x_address, volatile uint32_t w_address, volatile uint32_t y_address, volatile uint32_t z_address, volatile uint16_t m_size, volatile uint16_t n_size, volatile uint16_t k_size, volatile uint8_t gemm_ops, volatile uint32_t redundancy_enabled){
 
    HWPE_WRITE(x_address, REDMULE_REG_OFFS + REDMULE_REG_X_PTR);
    HWPE_WRITE(w_address, REDMULE_REG_OFFS + REDMULE_REG_W_PTR);
